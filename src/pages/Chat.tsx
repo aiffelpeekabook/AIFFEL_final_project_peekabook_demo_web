@@ -1,15 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, type FormEvent } from "react";
-
-export const Route = createFileRoute("/chat")({
-  head: () => ({
-    meta: [
-      { title: "PeekaBook (피카북) — 나만의 책 추천 친구" },
-      { name: "description", content: "AI가 당신의 독서 취향을 이해하고 꼭 맞는 책을 추천해드려요." },
-    ],
-  }),
-  component: ChatApp,
-});
+import { useNavigate } from "react-router-dom";
 
 type UserProfile = {
   reading_goal?: string | null;
@@ -65,13 +55,12 @@ const INITIAL_GREETING: ChatMessage = {
     "안녕하세요! 저는 피카북이에요 📚\n어떤 책을 찾고 계신가요? 요즘 관심사나 기분을 편하게 들려주세요.",
 };
 
-function ChatApp() {
+export default function ChatApp() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     if (sessionStorage.getItem("peekabook_authed") !== "1") {
-      navigate({ to: "/" });
+      navigate("/");
     }
   }, [navigate]);
 
@@ -212,7 +201,6 @@ function ChatApp() {
       className="relative h-screen w-screen bg-white overflow-hidden animate-fade-in-up"
       style={{ fontFamily: FONT }}
     >
-      {/* Decorative orbs (small, corner-only) */}
       <div
         aria-hidden
         className="pointer-events-none absolute top-0 left-0"
@@ -234,7 +222,6 @@ function ChatApp() {
         }}
       />
 
-      {/* Top nav */}
       <nav
         className="relative z-10 flex items-center gap-3 px-4"
         style={{
@@ -313,7 +300,6 @@ function ChatApp() {
         </div>
       </nav>
 
-      {/* Chat area */}
       <div
         ref={scrollRef}
         className="relative z-0 overflow-y-auto"
@@ -331,7 +317,6 @@ function ChatApp() {
         </div>
       </div>
 
-      {/* Input bar */}
       <form
         onSubmit={handleSubmit}
         className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-2 px-6"
@@ -378,7 +363,6 @@ function ChatApp() {
         </button>
       </form>
 
-      {/* Profile panel (slides from LEFT) */}
       <aside
         className="absolute top-[48px] bottom-0 left-0 z-20 transition-transform duration-300"
         style={{

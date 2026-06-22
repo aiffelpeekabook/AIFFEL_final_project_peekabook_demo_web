@@ -1,22 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "PeekaBook (피카북) — 나만의 책 추천 친구" },
-      { name: "description", content: "AI가 당신의 독서 취향을 이해하고 꼭 맞는 책을 추천해드려요." },
-      { property: "og:title", content: "PeekaBook (피카북)" },
-      { property: "og:description", content: "AI가 당신의 독서 취향을 이해하고 꼭 맞는 책을 추천해드려요." },
-    ],
-  }),
-  component: PasswordGate,
-});
+import { useNavigate } from "react-router-dom";
 
 const DISPLAY = "var(--pb-font-display)";
 const BODY = "var(--pb-font-body)";
 
-function PasswordGate() {
+export default function PasswordGate() {
   const [pw, setPw] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -27,7 +15,7 @@ function PasswordGate() {
     if (pw === expected) {
       setError("");
       try { sessionStorage.setItem("peekabook_authed", "1"); } catch { /* ignore */ }
-      navigate({ to: "/chat" });
+      navigate("/chat");
     } else {
       setError("비밀번호가 틀렸습니다");
     }
@@ -42,7 +30,6 @@ function PasswordGate() {
           radial-gradient(ellipse at 50% 46%, #ffffff 0%, #fef0b0 25%, #fcc870 55%, #f8a060 80%, #ee7848 100%)`,
       }}
     >
-      {/* Shared orb motif — subtle corners */}
       <div
         aria-hidden
         className="pointer-events-none absolute top-0 left-0"
@@ -64,11 +51,7 @@ function PasswordGate() {
         }}
       />
 
-      <div
-        className="w-full max-w-[600px] flex flex-col items-center text-center relative"
-        style={{ gap: 24 }}
-      >
-        {/* Top brand tag */}
+      <div className="w-full max-w-[600px] flex flex-col items-center text-center relative" style={{ gap: 24 }}>
         <div
           style={{
             fontFamily: BODY,
@@ -83,7 +66,6 @@ function PasswordGate() {
           PEEKABOOK
         </div>
 
-        {/* Main headline */}
         <h1
           style={{
             fontFamily: DISPLAY,
@@ -100,20 +82,10 @@ function PasswordGate() {
           decoded by AI.
         </h1>
 
-        {/* Sub text */}
-        <p
-          style={{
-            fontFamily: BODY,
-            fontSize: 15,
-            color: "var(--pb-ink)",
-            opacity: 0.42,
-            margin: 0,
-          }}
-        >
+        <p style={{ fontFamily: BODY, fontSize: 15, color: "var(--pb-ink)", opacity: 0.42, margin: 0 }}>
           Smarter picks with every page you turn
         </p>
 
-        {/* Password form */}
         <form onSubmit={submit} className="w-full flex flex-col items-center" style={{ gap: 24, marginTop: 8 }}>
           <input
             type="password"
@@ -157,21 +129,11 @@ function PasswordGate() {
           </button>
 
           {error && (
-            <p
-              style={{
-                color: "var(--pb-coral)",
-                fontSize: 13,
-                fontFamily: BODY,
-                margin: 0,
-              }}
-            >
-              {error}
-            </p>
+            <p style={{ color: "var(--pb-coral)", fontSize: 13, fontFamily: BODY, margin: 0 }}>{error}</p>
           )}
         </form>
       </div>
 
-      {/* Bottom tag */}
       <div
         className="fixed bottom-0 left-0 right-0 text-center"
         style={{
