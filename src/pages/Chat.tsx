@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
+type SlotObject = { value?: string; status?: string };
+type SlotValue = string | SlotObject | null | undefined;
+
 type UserProfile = {
-  reading_goal?: string | null;
-  preferred_genre?: string | null;
-  reading_style?: string | null;
-  difficulty_level?: string | null;
-  current_context?: string | null;
+  reading_goal?: SlotValue;
+  preferred_genre?: SlotValue;
+  reading_style?: SlotValue;
+  difficulty_level?: SlotValue;
+  current_context?: SlotValue;
 };
 
 type ProfilePayload = {
@@ -35,6 +38,20 @@ type Session = {
   threadId: string | null;
   messages: ChatMessage[];
 };
+
+function slotValueText(v: SlotValue): string | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "string") return v.trim() || null;
+  if (typeof v === "object") {
+    const text = (v as SlotObject).value;
+    if (typeof text === "string") return text.trim() || null;
+  }
+  return null;
+}
+
+function isSlotFilled(v: SlotValue): boolean {
+  return slotValueText(v) !== null;
+}
 
 const SLOTS: { key: keyof UserProfile; label: string }[] = [
   { key: "reading_goal", label: "독서 목표" },
@@ -194,7 +211,7 @@ export default function ChatApp() {
     firstSendRef.current = false;
   };
 
-  const filledCount = SLOTS.filter((s) => Boolean(profile[s.key])).length;
+  const filledCount = SLOTS.filter((s) => isSlotFilled(profile[s.key])).length;
 
   return (
     <div
@@ -396,8 +413,8 @@ export default function ChatApp() {
 
         <div className="px-4 space-y-2">
           {SLOTS.map(({ key, label }) => {
-            const val = profile[key];
-            const filled = Boolean(val);
+            const text = slotValueText(profile[key]);
+            const filled = isSlotFilled(profile[key]);
             return (
               <div
                 key={key}
@@ -419,7 +436,7 @@ export default function ChatApp() {
                     marginTop: 2,
                   }}
                 >
-                  {filled ? val : "미입력"}
+                  {filled ? text : "미입력"}
                 </div>
               </div>
             );
