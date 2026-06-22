@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 
 type SlotObject = { value?: string; status?: string };
 type SlotValue = string | SlotObject | null | undefined;
@@ -62,7 +63,10 @@ const SLOTS: { key: keyof UserProfile; label: string }[] = [
 ];
 
 const STORAGE_KEY = "peekabook_profile";
+// 배포 환경: HuggingFace Spaces 백엔드
 const API_URL = "https://ellldy-peekabook-api.hf.space/chat";
+// 로컬 개발 환경
+// const API_URL = "http://localhost:7860/chat";
 const FONT = "var(--pb-font-body)";
 const DISPLAY = "var(--pb-font-display)";
 
@@ -478,10 +482,12 @@ function MessageRow({
   onNewSession?: () => void;
 }) {
   const isUser = message.role === "user";
+  const isRecommendation = !isUser && message.content.includes("📚");
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} gap-2 items-end`}>
       {!isUser && <Avatar letter="P" bg="#c8d8a0" />}
-      <div style={{ maxWidth: "60%" }}>
+      <div style={{ maxWidth: isRecommendation ? "80%" : "60%" }}>
         <div
           style={{
             background: isUser ? "#fde8d0" : "#eaf3d8",
@@ -491,11 +497,53 @@ function MessageRow({
             padding: "12px 16px",
             fontFamily: FONT,
             fontSize: 14,
-            whiteSpace: "pre-wrap",
             lineHeight: 1.6,
           }}
         >
-          {message.content}
+          {isRecommendation ? (
+            <ReactMarkdown
+              components={{
+                img: ({ src, alt }) => (
+                  <img
+                    src={src}
+                    alt={alt}
+                    style={{
+                      height: 320,
+                      width: "auto",
+                      borderRadius: 8,
+                      display: "block",
+                      margin: "8px 0",
+                    }}
+                  />
+                ),
+                hr: () => (
+                  <hr style={{ border: "none", borderTop: "1px solid #c8d8b0", margin: "16px 0" }} />
+                ),
+                p: ({ children }) => {
+                  const text = String(children);
+                  if (text.startsWith("📚")) {
+                    return (
+                      <p style={{ fontSize: 16, fontWeight: 700, margin: "8px 0 4px", color: "#2a3a1a" }}>
+                        {children}
+                      </p>
+                    );
+                  }
+                  if (text.startsWith("📖") || text.startsWith("✏️") || text.startsWith("📍")) {
+                    return (
+                      <p style={{ fontSize: 14, fontWeight: 700, margin: "10px 0 4px", color: "#3a5a2a" }}>
+                        {children}
+                      </p>
+                    );
+                  }
+                  return <p style={{ margin: "4px 0", whiteSpace: "pre-wrap" }}>{children}</p>;
+                },
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          ) : (
+            <span style={{ whiteSpace: "pre-wrap" }}>{message.content}</span>
+          )}
         </div>
         {onNewSession && (
           <button
