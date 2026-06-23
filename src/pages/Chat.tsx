@@ -62,7 +62,10 @@ const SLOTS: { key: keyof UserProfile; label: string }[] = [
   { key: "current_context", label: "현재 상황" },
 ];
 
-const STORAGE_KEY = "peekabook_profile";
+const getStorageKey = () => {
+  const uid = sessionStorage.getItem("peekabook_user_id") || "default";
+  return `peekabook_profile_${uid}`;
+};
 // 배포 환경: HuggingFace Spaces 백엔드
 const API_URL = "https://ellldy-peekabook-api.hf.space/chat";
 // 로컬 개발 환경
@@ -114,7 +117,7 @@ export default function ChatApp() {
 
   const readStoredProfile = (): ProfilePayload | null => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(getStorageKey());
       return raw ? (JSON.parse(raw) as ProfilePayload) : null;
     } catch {
       return null;
@@ -126,6 +129,7 @@ export default function ChatApp() {
   };
 
   const sendMessage = async (text: string, priorPayload?: ProfilePayload | null) => {
+    const userId = sessionStorage.getItem("peekabook_user_id") || "default";
     setLoading(true);
     try {
       const res = await fetch(API_URL, {
@@ -134,6 +138,7 @@ export default function ChatApp() {
         body: JSON.stringify({
           message: text,
           session_id: active.sessionId,
+          user_id: userId,
           thread_id: active.threadId,
           prior_profile_payload: priorPayload ?? null,
         }),
@@ -147,7 +152,7 @@ export default function ChatApp() {
         const up = data.profile_payload.user_profile ?? (data.profile_payload as UserProfile);
         if (up) setProfile(up);
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.profile_payload));
+          localStorage.setItem(getStorageKey(), JSON.stringify(data.profile_payload));
         } catch {
           /* ignore */
         }
@@ -474,6 +479,50 @@ export default function ChatApp() {
   );
 }
 
+const INTRO_THRESHOLD = 200;
+
+function extractText(node: React.ReactNode): string {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractText).join("");
+  if (node !== null && typeof node === "object" && "props" in node) {
+    const el = node as React.ReactElement;
+    return extractText((el.props as { children?: React.ReactNode }).children);
+  }
+  return "";
+}
+
+function ExpandableParagraph({ children }: { children: React.ReactNode }) {
+  const [expanded, setExpanded] = useState(false);
+  const text = extractText(children);
+
+  if (text.length <= INTRO_THRESHOLD) {
+    return <p style={{ margin: "4px 0", whiteSpace: "pre-wrap" }}>{children}</p>;
+  }
+
+  return (
+    <p style={{ margin: "4px 0", whiteSpace: "pre-wrap" }}>
+      {expanded ? text : text.slice(0, INTRO_THRESHOLD) + "..."}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        style={{
+          marginLeft: 6,
+          color: "#5a8a3a",
+          fontSize: 12,
+          fontWeight: 600,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          textDecoration: "underline",
+          padding: 0,
+        }}
+      >
+        {expanded ? "접기" : "펼쳐보기"}
+      </button>
+    </p>
+  );
+}
+
 function MessageRow({
   message,
   onNewSession,
@@ -520,7 +569,7 @@ function MessageRow({
                   <hr style={{ border: "none", borderTop: "1px solid #c8d8b0", margin: "16px 0" }} />
                 ),
                 p: ({ children }) => {
-                  const text = String(children);
+                  const text = extractText(children);
                   if (text.startsWith("📚")) {
                     return (
                       <p style={{ fontSize: 16, fontWeight: 700, margin: "8px 0 4px", color: "#2a3a1a" }}>
@@ -528,14 +577,15 @@ function MessageRow({
                       </p>
                     );
                   }
-                  if (text.startsWith("📖") || text.startsWith("✏️") || text.startsWith("📍")) {
+                  // 이모지 헤딩은 짧은 라인만 (LLM이 내용을 붙여쓴 경우 ExpandableParagraph로 넘김)
+                  if ((text.startsWith("📖") || text.startsWith("✏️") || text.startsWith("📍")) && text.length < 25) {
                     return (
                       <p style={{ fontSize: 14, fontWeight: 700, margin: "10px 0 4px", color: "#3a5a2a" }}>
                         {children}
                       </p>
                     );
                   }
-                  return <p style={{ margin: "4px 0", whiteSpace: "pre-wrap" }}>{children}</p>;
+                  return <ExpandableParagraph>{children}</ExpandableParagraph>;
                 },
               }}
             >

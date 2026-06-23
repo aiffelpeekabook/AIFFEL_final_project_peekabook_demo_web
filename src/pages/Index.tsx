@@ -6,15 +6,23 @@ const BODY = "var(--pb-font-body)";
 
 export default function PasswordGate() {
   const [pw, setPw] = useState("");
+  const [userId, setUserId] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const expected = import.meta.env.VITE_APP_PASSWORD;
+    if (!userId.trim()) {
+      setError("아이디를 입력해주세요");
+      return;
+    }
     if (pw === expected) {
       setError("");
-      try { sessionStorage.setItem("peekabook_authed", "1"); } catch { /* ignore */ }
+      try {
+        sessionStorage.setItem("peekabook_authed", "1");
+        sessionStorage.setItem("peekabook_user_id", userId.trim());
+      } catch { /* ignore */ }
       navigate("/chat");
     } else {
       setError("비밀번호가 틀렸습니다");
@@ -86,13 +94,31 @@ export default function PasswordGate() {
           Smarter picks with every page you turn
         </p>
 
-        <form onSubmit={submit} className="w-full flex flex-col items-center" style={{ gap: 24, marginTop: 8 }}>
+        <form onSubmit={submit} className="w-full flex flex-col items-center" style={{ gap: 16, marginTop: 8 }}>
+          <input
+            type="text"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="Enter your ID"
+            autoFocus
+            className="outline-none"
+            style={{
+              width: 280,
+              textAlign: "center",
+              background: "transparent",
+              border: "none",
+              borderBottom: "1px solid rgba(61,16,32,0.25)",
+              fontFamily: BODY,
+              fontSize: 15,
+              color: "var(--pb-ink)",
+              padding: "10px 0",
+            }}
+          />
           <input
             type="password"
             value={pw}
             onChange={(e) => setPw(e.target.value)}
             placeholder="Enter password"
-            autoFocus
             className="outline-none"
             style={{
               width: 280,
